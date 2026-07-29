@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador y Visor de Paleta de Colores</title>
+  <style>
+    :root {
+      --c1: #0f172a; /* Fondo principal */
+      --c2: #1e293b; /* Tarjetas / Contenedores */
+      --c3: #6366f1; /* Color Primario / Botones */
+      --c4: #ec4899; /* Color Secundario / Destacados */
+      --c5: #f8fafc; /* Texto Principal */
+      --c6: #94a3b8; /* Texto Secundario / Bordes */
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: #090d16;
+      color: #fff;
+    }
+
+    /* Layout Principal */
+    .app-container {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    @media (max-width: 900px) {
+      .app-container { grid-template-columns: 1fr; height: auto; overflow: visible; }
+    }
+
+    /* Panel Lateral de Controles */
+    .sidebar {
+      background: #111827;
+      border-right: 1px solid #1f2937;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .sidebar h2 { font-size: 1.25rem; color: #f3f4f6; }
+    .sidebar p { font-size: 0.85rem; color: #9ca3af; }
+
+    /* Entradas de color */
+    .palette-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .color-input-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #1f2937;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+    }
+
+    .color-input-group label {
+      font-size: 0.8rem;
+      flex: 1;
+      color: #d1d5db;
+    }
+
+    .color-picker-wrapper {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid #374151;
+      cursor: pointer;
+    }
+
+    input[type="color"] {
+      border: none;
+      width: 150%;
+      height: 150%;
+      margin: -25%;
+      cursor: pointer;
+    }
+
+    input[type="text"] {
+      width: 75px;
+      background: #111827;
+      border: 1px solid #374151;
+      color: #fff;
+      padding: 0.3rem 0.5rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+    }
+
+    /* Círculo Cromático Dinámico */
+    .wheel-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .color-wheel {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+      position: relative;
+      border: 3px solid #374151;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    /* Vista Previa de la Web */
+    .preview-viewport {
+      background: var(--c1);
+      color: var(--c5);
+      overflow-y: auto;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Componentes de la Web de Ejemplo */
+    header {
+      background: var(--c2);
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--c6);
+    }
+
+    .logo { font-weight: bold; font-size: 1.2rem; color: var(--c5); }
+    
+    nav a {
+      color: var(--c6);
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .hero {
+      padding: 4rem 2rem;
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero h1 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--c5); }
+    .hero p { font-size: 1.1rem; color: var(--c6); margin-bottom: 2rem; }
+
+    .btn-group { display: flex; gap: 1rem; justify-content: center; }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.2s;
+    }
+
+    .btn-primary { background: var(--c3); color: #fff; }
+    .btn-secondary { background: transparent; border: 2px solid var(--c4); color: var(--c4); }
+    .btn:hover { opacity: 0.9; }
+
+    .cards-section {
+      padding: 3rem 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--c2);
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--c6);
+    }
+
+    .card-accent { border-top: 4px solid var(--c4); }
+    .card h3 { color: var(--c5); margin-bottom: 0.5rem; }
+    .card p { color: var(--c6); font-size: 0.9rem; }
+
+    footer {
+      margin-top: auto;
+      background: var(--c2);
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--c6);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--c6);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- BARRA LATERAL CON CONTROLES -->
+    <aside class="sidebar">
+      <div>
+        <h2>Configurador de Paleta</h2>
+        <p>Ajusta los 6 colores y observa cómo cambia el sitio en tiempo real.</p>
+      </div>
+
+      <!-- Círculo Cromático de Referencia -->
+      <div class="wheel-container">
+        <div class="color-wheel"></div>
+        <span style="font-size: 0.75rem; color: #9ca3af;">Círculo Cromático (Guía Visual)</span>
+      </div>
+
+      <!-- Selector de 6 Colores -->
+      <div class="palette-grid">
+        <div class="color-input-group">
+          <label>1. Fondo Principal</label>
+          <div class="color-picker-wrapper"><input type="color" id="picker-c1" value="#0f172a"></div>
+          <input type="text" id="hex-c1" value="#0F172A">
+        </div>
+
+        <div class="color-input-group">
+          <label>2. Fondo Secundario</label>
+          <div class="color-picker-wrapper"><input type="color" id="picker-c2" value="#1e293b"></div>
+          <input type="text" id="hex-c2" value="#1E293B">
+        </div>
+
+        <div class="color-input-group">
+          <label>3. Acento Principal</label>
+          <div class="color-picker-wrapper"><input type="color" id="picker-c3" value="#6366f1"></div>
+          <input type="text" id="hex-c3" value="#6366F1">
+        </div>
+
+        <div class="color-input-group">
+          <label>4. Acento Secundario</label>
+          <div class="color-picker-wrapper"><input type="color" id="picker-c4" value="#ec4899"></div>
+          <input type="text" id="hex-c4" value="#EC4899">
+        </div>
+
+        <div class="color-input-group">
+          <label>5. Texto Principal</label>
+          <div class="color-picker-wrapper"><input type="color" id="picker-c5" value="#f8fafc"></div>
+          <input type="text" id="hex-c5" value="#F8FAFC">
+        </div>
+
+        <div class="color-input-group">
+          <label>6. Texto Muteado / Borde</label>
+          <div class="color-picker-wrapper"><input type="color" id="picker-c6" value="#94a3b8"></div>
+          <input type="text" id="hex-c6" value="#94A3B8">
+        </div>
+      </div>
+    </aside>
+
+    <!-- VISTA PREVIA DE LA PÁGINA WEB -->
+    <main class="preview-viewport">
+      <header>
+        <div class="logo">MiMarca</div>
+        <nav>
+          <a href="#">Inicio</a>
+          <a href="#">Servicios</a>
+          <a href="#">Contacto</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <h1>Diseña con los Colores Perfectos</h1>
+        <p>Prueba combinaciones armónicas usando tu paleta personalizada de 6 colores aplicable directamente a tu proyecto.</p>
+        <div class="btn-group">
+          <button class="btn btn-primary">Boton Principal</button>
+          <button class="btn btn-secondary">Boton Secundario</button>
+        </div>
+      </section>
+
+      <section class="cards-section">
+        <div class="card card-accent">
+          <h3>Tarjeta Destacada</h3>
+          <p>Usa el acento secundario en bordes para llamar la atención del usuario.</p>
+        </div>
+        <div class="card">
+          <h3>Tarjeta Estándar</h3>
+          <p>Usa el fondo secundario y texto muteado para mantener buena jerarquía.</p>
+        </div>
+        <div class="card">
+          <h3>Componente Visual</h3>
+          <p>Verifica que los contrastes sean legibles para garantizar accesibilidad.</p>
+        </div>
+      </section>
+
+      <footer>
+        <p>© 2026 Vista previa de Paleta de Colores. Generado para tu proyecto.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    // Sincronizar selectores, inputs HEX y Variables CSS
+    const keys = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'];
+
+    keys.forEach(key => {
+      const picker = document.getElementById(`picker-${key}`);
+      const hexInput = document.getElementById(`hex-${key}`);
+
+      // Al cambiar el color desde el selector
+      picker.addEventListener('input', (e) => {
+        const val = e.target.value;
+        hexInput.value = val.toUpperCase();
+        document.documentElement.style.setProperty(`--${key}`, val);
+      });
+
+      // Al escribir manualmente el HEX en la casilla
+      hexInput.addEventListener('input', (e) => {
+        let val = e.target.value;
+        if (!val.startsWith('#')) val = '#' + val;
+        
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+          picker.value = val;
+          document.documentElement.style.setProperty(`--${key}`, val);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
